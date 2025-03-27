@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Grid,
@@ -16,8 +16,19 @@ import {
   IconButton,
   Box,
   CircularProgress,
+  AppBar,
+  Toolbar,
+  Avatar,
+  Chip,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import {
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Logout as LogoutIcon,
+  Person as PersonIcon,
+} from '@mui/icons-material';
 import { getUsers, updateUser, deleteUser } from '../services/api';
 import { User } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -32,8 +43,10 @@ const UsersList: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const response = await getUsers(page);
@@ -48,25 +61,21 @@ const UsersList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, logout, navigate]);
 
   useEffect(() => {
     fetchUsers();
-  }, [page, logout, navigate]);
+  }, [fetchUsers]);
 
   const handleEditUser = async (formData: Partial<User>) => {
     if (!editUser) return;
     try {
-      // Call the API (though it won't persist)
       await updateUser(editUser.id, formData);
-      
-      // Update the local state
       setUsers(users.map(user => 
         user.id === editUser.id 
           ? { ...user, ...formData }
           : user
       ));
-      
       setEditUser(null);
       toast.success('User updated successfully!');
     } catch (error) {
@@ -77,10 +86,7 @@ const UsersList: React.FC = () => {
 
   const handleDeleteUser = async (userId: number) => {
     try {
-      // Call the API (though it won't persist)
       await deleteUser(userId);
-      
-      // Update the local state
       setUsers(users.filter(user => user.id !== userId));
       toast.success('User deleted successfully!');
     } catch (error) {
@@ -98,52 +104,152 @@ const UsersList: React.FC = () => {
   }
 
   return (
-    <Container>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', my: 4 }}>
-        <Typography variant="h4">Users List</Typography>
-        <Button variant="outlined" color="secondary" onClick={() => logout()}>
-          Logout
-        </Button>
-      </Box>
-      <Grid container spacing={3}>
-        {users.map((user) => (
-          <Grid item xs={12} sm={6} md={4} key={user.id}>
-            <Card>
-              <CardMedia
-                component="img"
-                height="200"
-                image={user.avatar}
-                alt={`${user.first_name} ${user.last_name}`}
-              />
-              <CardContent>
-                <Typography gutterBottom variant="h6">
-                  {user.first_name} {user.last_name}
-                </Typography>
-                <Typography color="textSecondary">{user.email}</Typography>
-                <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                  <IconButton color="primary" onClick={() => setEditUser(user)}>
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton color="error" onClick={() => handleDeleteUser(user.id)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-      <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-        <Pagination
-          count={totalPages}
-          page={page}
-          onChange={(_, value) => setPage(value)}
-          color="primary"
-        />
-      </Box>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f7fafc' }}>
+      <AppBar position="static" sx={{ background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)' }}>
+        <Toolbar>
+          <PersonIcon sx={{ mr: 2 }} />
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            User Management
+          </Typography>
+          <Button
+            color="inherit"
+            startIcon={<LogoutIcon />}
+            onClick={() => logout()}
+            sx={{
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              },
+            }}
+          >
+            Logout
+          </Button>
+        </Toolbar>
+      </AppBar>
 
-      <Dialog open={!!editUser} onClose={() => setEditUser(null)}>
-        <DialogTitle>Edit User</DialogTitle>
+      <Container sx={{ py: 4 }}>
+        <Grid container spacing={3}>
+          {users.map((user) => (
+            <Grid item xs={12} sm={6} md={4} key={user.id}>
+              <Card
+                sx={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: 6,
+                  },
+                }}
+              >
+                <CardMedia
+                  component="img"
+                  height="200"
+                  image={user.avatar}
+                  alt={`${user.first_name} ${user.last_name}`}
+                  sx={{
+                    objectFit: 'cover',
+                    borderBottom: '2px solid',
+                    borderColor: 'primary.main',
+                  }}
+                />
+                <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar
+                      src={user.avatar}
+                      alt={`${user.first_name} ${user.last_name}`}
+                      sx={{ width: 48, height: 48, mr: 2 }}
+                    />
+                    <Box>
+                      <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
+                        {user.first_name} {user.last_name}
+                      </Typography>
+                      <Chip
+                        label={`ID: ${user.id}`}
+                        size="small"
+                        color="primary"
+                        sx={{ mt: 0.5 }}
+                      />
+                    </Box>
+                  </Box>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      mb: 2,
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {user.email}
+                  </Typography>
+                  <Box sx={{ mt: 'auto', display: 'flex', gap: 1 }}>
+                    <IconButton
+                      color="primary"
+                      onClick={() => setEditUser(user)}
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: 'primary.light',
+                          color: 'white',
+                        },
+                      }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      color="error"
+                      onClick={() => handleDeleteUser(user.id)}
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: 'error.light',
+                          color: 'white',
+                        },
+                      }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+        <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={(_, value) => setPage(value)}
+            color="primary"
+            size={isMobile ? 'small' : 'large'}
+            sx={{
+              '& .MuiPaginationItem-root': {
+                '&.Mui-selected': {
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                  },
+                },
+              },
+            }}
+          />
+        </Box>
+      </Container>
+
+      <Dialog
+        open={!!editUser}
+        onClose={() => setEditUser(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ 
+          background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
+          color: 'white',
+        }}>
+          Edit User
+        </DialogTitle>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -155,7 +261,7 @@ const UsersList: React.FC = () => {
             });
           }}
         >
-          <DialogContent>
+          <DialogContent sx={{ pt: 3 }}>
             <TextField
               autoFocus
               margin="dense"
@@ -163,6 +269,7 @@ const UsersList: React.FC = () => {
               label="First Name"
               fullWidth
               defaultValue={editUser?.first_name}
+              sx={{ mb: 2 }}
             />
             <TextField
               margin="dense"
@@ -170,6 +277,7 @@ const UsersList: React.FC = () => {
               label="Last Name"
               fullWidth
               defaultValue={editUser?.last_name}
+              sx={{ mb: 2 }}
             />
             <TextField
               margin="dense"
@@ -180,15 +288,26 @@ const UsersList: React.FC = () => {
               defaultValue={editUser?.email}
             />
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setEditUser(null)}>Cancel</Button>
-            <Button type="submit" variant="contained">
-              Save
+          <DialogActions sx={{ p: 3 }}>
+            <Button onClick={() => setEditUser(null)} variant="outlined">
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              sx={{
+                background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #764ba2 30%, #667eea 90%)',
+                },
+              }}
+            >
+              Save Changes
             </Button>
           </DialogActions>
         </form>
       </Dialog>
-    </Container>
+    </Box>
   );
 };
 
