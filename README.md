@@ -1,86 +1,102 @@
-# EmployWise Assignment - User Management System
+# EmployWise Assignment
 
-This project is a React-based user management system that integrates with the Reqres API. It includes authentication, user listing, and user management features.
+A React application for managing users with authentication, built using TypeScript and Material-UI.
+
+## Live Demo
+
+Visit the live application at: [https://employwise-assignment-beta.vercel.app/](https://employwise-assignment-beta.vercel.app/)
 
 ## Features
 
-1. Authentication Screen
-   - Login functionality using Reqres API
-   - Token-based authentication
-   - Protected routes
+- 🔐 User Authentication
+- 👥 User Management
+  - View all users with pagination
+  - Search users by name or email
+  - Filter users by role
+  - Edit user details
+  - Delete users
+- 🎨 Modern UI with Material-UI
+- 📱 Fully Responsive Design
+- 🔒 Protected Routes
+- 🚀 Fast and Optimized Performance
 
-2. Users List
-   - Paginated list of users
-   - Card-based layout with user avatars
-   - Responsive design
-
-3. User Management
-   - Edit user details
-   - Delete users
-   - Success/error notifications
-
-## Technologies Used
+## Tech Stack
 
 - React 18
 - TypeScript
 - Material-UI (MUI)
-- React Router v6
+- React Router
 - Axios
 - React Toastify
+- Vercel (Deployment)
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js (v14 or higher)
-- npm (v6 or higher)
+- npm or yarn
 
 ### Installation
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/yourusername/employwise-assignment.git
+   ```
+
+2. Navigate to the project directory:
+   ```bash
    cd employwise-assignment
    ```
 
-2. Install dependencies:
+3. Install dependencies:
    ```bash
    npm install
+   # or
+   yarn install
    ```
 
-3. Start the development server:
+4. Start the development server:
    ```bash
    npm start
+   # or
+   yarn start
    ```
 
-4. Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### Default Login Credentials
-
-- Email: eve.holt@reqres.in
-- Password: cityslicka
-
-## Project Structure
+## Demo Credentials
 
 ```
-src/
-  ├── components/        # React components
-  ├── contexts/         # Context providers
-  ├── services/         # API services
-  ├── types/           # TypeScript interfaces
-  └── App.tsx          # Main application component
+Email: eve.holt@reqres.in
+Password: cityslicka
 ```
 
-## Available Scripts
+## API Integration
 
-- `npm start`: Runs the app in development mode
-- `npm test`: Launches the test runner
-- `npm run build`: Builds the app for production
-- `npm run eject`: Ejects from Create React App
+The application uses the ReqRes API for:
+- User authentication
+- User management (CRUD operations)
 
-## Notes
+## Deployment
 
-- The application uses the Reqres API (https://reqres.in/) for demonstration purposes
-- All API operations are simulated (create, update, delete)
-- The token is stored in localStorage for persistence
-- The UI is fully responsive and works on both desktop and mobile devices
+The application is deployed on Vercel. To deploy your own instance:
+
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Configure the build settings:
+   - Build Command: `npm run build`
+   - Output Directory: `build`
+   - Install Command: `npm install`
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
