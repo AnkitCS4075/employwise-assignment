@@ -274,6 +274,11 @@ const UsersList: React.FC = () => {
                     objectFit: 'cover',
                     borderBottom: '2px solid',
                     borderColor: 'primary.main',
+                    backgroundColor: 'grey.100',
+                  }}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(`${user.first_name} ${user.last_name}`)}&background=random`;
                   }}
                 />
                 <CardContent sx={{ flexGrow: 1, p: 3 }}>
@@ -282,6 +287,10 @@ const UsersList: React.FC = () => {
                       src={user.avatar}
                       alt={`${user.first_name} ${user.last_name}`}
                       sx={{ width: 48, height: 48, mr: 2 }}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(`${user.first_name} ${user.last_name}`)}&background=random`;
+                      }}
                     />
                     <Box>
                       <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
