@@ -84,9 +84,12 @@ const UsersList: React.FC = () => {
     }
   }, [logout, navigate]);
 
+  // Only fetch users on initial mount
   useEffect(() => {
-    fetchAllUsers();
-  }, [fetchAllUsers]);
+    if (allUsers.length === 0) {
+      fetchAllUsers();
+    }
+  }, [fetchAllUsers, allUsers.length]);
 
   // Filter users based on search query
   useEffect(() => {
@@ -119,17 +122,21 @@ const UsersList: React.FC = () => {
   const handleEditUser = async (formData: Partial<User>) => {
     if (!editUser) return;
     try {
-      await updateUser(editUser.id, formData);
+      // Call the API to update the user
+      const updatedUser = await updateUser(editUser.id, formData);
+      
+      // Update the local state with the response from the API
       const updatedUsers = allUsers.map(user => 
         user.id === editUser.id 
-          ? { ...user, ...formData }
+          ? { ...user, ...updatedUser }
           : user
       );
+      
       setAllUsers(updatedUsers);
       setFilteredUsers(updatedUsers);
       setEditUser(null);
       toast.success('User updated successfully!');
-      navigate('/users'); // Navigate back to users list after successful edit
+      navigate('/users');
     } catch (error) {
       console.error('Error updating user:', error);
       toast.error('Failed to update user');
@@ -145,7 +152,7 @@ const UsersList: React.FC = () => {
       setFilteredUsers(updatedUsers);
       toast.success('User deleted successfully!');
       if (id === userId.toString()) {
-        navigate('/users'); // Navigate back to users list if deleted user was being edited
+        navigate('/users');
       }
     } catch (error) {
       console.error('Error deleting user:', error);
@@ -407,6 +414,7 @@ const UsersList: React.FC = () => {
               fullWidth
               defaultValue={editUser?.first_name}
               sx={{ mb: 2 }}
+              required
             />
             <TextField
               margin="dense"
@@ -415,6 +423,7 @@ const UsersList: React.FC = () => {
               fullWidth
               defaultValue={editUser?.last_name}
               sx={{ mb: 2 }}
+              required
             />
             <TextField
               margin="dense"
@@ -423,6 +432,7 @@ const UsersList: React.FC = () => {
               type="email"
               fullWidth
               defaultValue={editUser?.email}
+              required
             />
           </DialogContent>
           <DialogActions sx={{ p: 3 }}>

@@ -31,7 +31,14 @@ export const getUsers = async (page: number = 1): Promise<UsersResponse> => {
 
 export const updateUser = async (id: number, userData: Partial<User>): Promise<User> => {
   const response = await api.put<User>(`/users/${id}`, userData);
-  return response.data;
+  // Since Reqres is a mock API, we'll return a properly formatted user object
+  return {
+    id,
+    email: userData.email || response.data.email,
+    first_name: userData.first_name || response.data.first_name,
+    last_name: userData.last_name || response.data.last_name,
+    avatar: response.data.avatar,
+  };
 };
 
 export const deleteUser = async (id: number): Promise<void> => {
