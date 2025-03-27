@@ -9,7 +9,20 @@ import Login from './components/Login';
 import UsersList from './components/UsersList';
 import ProtectedRoute from './components/ProtectedRoute';
 
-const theme = createTheme();
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#667eea',
+      light: '#829fff',
+      dark: '#4b50b7',
+    },
+    secondary: {
+      main: '#764ba2',
+      light: '#a17ad5',
+      dark: '#4f1d71',
+    },
+  },
+});
 
 function App() {
   return (
@@ -27,7 +40,16 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/users/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <UsersList />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/" element={<Navigate to="/users" replace />} />
+            <Route path="*" element={<Navigate to="/users" replace />} />
           </Routes>
         </Router>
         <ToastContainer position="top-right" autoClose={3000} />

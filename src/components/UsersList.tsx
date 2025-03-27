@@ -34,7 +34,7 @@ import {
 } from '@mui/icons-material';
 import { getUsers, updateUser, deleteUser } from '../services/api';
 import { User } from '../types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 
@@ -49,6 +49,7 @@ const UsersList: React.FC = () => {
   const [editUser, setEditUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { logout } = useAuth();
   const theme = useTheme();
@@ -109,6 +110,12 @@ const UsersList: React.FC = () => {
     setDisplayedUsers(filteredUsers.slice(startIndex, endIndex));
   }, [page, filteredUsers]);
 
+  // Handle edit user with route
+  const handleEditClick = (user: User) => {
+    navigate(`/users/${user.id}/edit`);
+  };
+
+  // Handle edit user form submission
   const handleEditUser = async (formData: Partial<User>) => {
     if (!editUser) return;
     try {
@@ -122,12 +129,14 @@ const UsersList: React.FC = () => {
       setFilteredUsers(updatedUsers);
       setEditUser(null);
       toast.success('User updated successfully!');
+      navigate('/users'); // Navigate back to users list after successful edit
     } catch (error) {
       console.error('Error updating user:', error);
       toast.error('Failed to update user');
     }
   };
 
+  // Handle delete user
   const handleDeleteUser = async (userId: number) => {
     try {
       await deleteUser(userId);
@@ -135,11 +144,32 @@ const UsersList: React.FC = () => {
       setAllUsers(updatedUsers);
       setFilteredUsers(updatedUsers);
       toast.success('User deleted successfully!');
+      if (id === userId.toString()) {
+        navigate('/users'); // Navigate back to users list if deleted user was being edited
+      }
     } catch (error) {
       console.error('Error deleting user:', error);
       toast.error('Failed to delete user');
     }
   };
+
+  // Handle dialog close
+  const handleDialogClose = () => {
+    setEditUser(null);
+    navigate('/users');
+  };
+
+  // Effect to handle edit route
+  useEffect(() => {
+    if (id) {
+      const userToEdit = allUsers.find(user => user.id === parseInt(id));
+      if (userToEdit) {
+        setEditUser(userToEdit);
+      } else {
+        navigate('/users');
+      }
+    }
+  }, [id, allUsers, navigate]);
 
   if (loading) {
     return (
@@ -273,7 +303,7 @@ const UsersList: React.FC = () => {
                   <Box sx={{ mt: 'auto', display: 'flex', gap: 1 }}>
                     <IconButton
                       color="primary"
-                      onClick={() => setEditUser(user)}
+                      onClick={() => handleEditClick(user)}
                       sx={{
                         '&:hover': {
                           backgroundColor: 'primary.light',
@@ -347,7 +377,7 @@ const UsersList: React.FC = () => {
 
       <Dialog
         open={!!editUser}
-        onClose={() => setEditUser(null)}
+        onClose={handleDialogClose}
         maxWidth="sm"
         fullWidth
       >
@@ -396,7 +426,7 @@ const UsersList: React.FC = () => {
             />
           </DialogContent>
           <DialogActions sx={{ p: 3 }}>
-            <Button onClick={() => setEditUser(null)} variant="outlined">
+            <Button onClick={handleDialogClose} variant="outlined">
               Cancel
             </Button>
             <Button
