@@ -15,12 +15,14 @@ import {
   TextField,
   IconButton,
   Box,
+  CircularProgress,
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { getUsers, updateUser, deleteUser } from '../services/api';
 import { User } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-toastify';
 
 const UsersList: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -50,27 +52,50 @@ const UsersList: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [page]);
+  }, [page, logout, navigate]);
 
   const handleEditUser = async (formData: Partial<User>) => {
     if (!editUser) return;
     try {
+      // Call the API (though it won't persist)
       await updateUser(editUser.id, formData);
+      
+      // Update the local state
+      setUsers(users.map(user => 
+        user.id === editUser.id 
+          ? { ...user, ...formData }
+          : user
+      ));
+      
       setEditUser(null);
-      fetchUsers();
+      toast.success('User updated successfully!');
     } catch (error) {
       console.error('Error updating user:', error);
+      toast.error('Failed to update user');
     }
   };
 
   const handleDeleteUser = async (userId: number) => {
     try {
+      // Call the API (though it won't persist)
       await deleteUser(userId);
-      fetchUsers();
+      
+      // Update the local state
+      setUsers(users.filter(user => user.id !== userId));
+      toast.success('User deleted successfully!');
     } catch (error) {
       console.error('Error deleting user:', error);
+      toast.error('Failed to delete user');
     }
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Container>
