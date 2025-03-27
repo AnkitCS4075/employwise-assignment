@@ -22,12 +22,15 @@ import {
   Chip,
   useTheme,
   useMediaQuery,
+  InputAdornment,
+  Paper,
 } from '@mui/material';
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Logout as LogoutIcon,
   Person as PersonIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import { getUsers, updateUser, deleteUser } from '../services/api';
 import { User } from '../types';
@@ -37,10 +40,12 @@ import { toast } from 'react-toastify';
 
 const UsersList: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const { logout } = useAuth();
   const theme = useTheme();
@@ -51,6 +56,7 @@ const UsersList: React.FC = () => {
       setLoading(true);
       const response = await getUsers(page);
       setUsers(response.data);
+      setFilteredUsers(response.data);
       setTotalPages(response.total_pages);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -67,15 +73,30 @@ const UsersList: React.FC = () => {
     fetchUsers();
   }, [fetchUsers]);
 
+  // Filter users based on search query
+  useEffect(() => {
+    const filtered = users.filter(user => {
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        user.first_name.toLowerCase().includes(searchLower) ||
+        user.last_name.toLowerCase().includes(searchLower) ||
+        user.email.toLowerCase().includes(searchLower)
+      );
+    });
+    setFilteredUsers(filtered);
+  }, [searchQuery, users]);
+
   const handleEditUser = async (formData: Partial<User>) => {
     if (!editUser) return;
     try {
       await updateUser(editUser.id, formData);
-      setUsers(users.map(user => 
+      const updatedUsers = users.map(user => 
         user.id === editUser.id 
           ? { ...user, ...formData }
           : user
-      ));
+      );
+      setUsers(updatedUsers);
+      setFilteredUsers(updatedUsers);
       setEditUser(null);
       toast.success('User updated successfully!');
     } catch (error) {
@@ -87,7 +108,9 @@ const UsersList: React.FC = () => {
   const handleDeleteUser = async (userId: number) => {
     try {
       await deleteUser(userId);
-      setUsers(users.filter(user => user.id !== userId));
+      const updatedUsers = users.filter(user => user.id !== userId);
+      setUsers(updatedUsers);
+      setFilteredUsers(updatedUsers);
       toast.success('User deleted successfully!');
     } catch (error) {
       console.error('Error deleting user:', error);
@@ -127,8 +150,48 @@ const UsersList: React.FC = () => {
       </AppBar>
 
       <Container sx={{ py: 4 }}>
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            mb: 4,
+            borderRadius: 2,
+            background: 'white',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+          }}
+        >
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Search users by name or email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="primary" />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                '&:hover fieldset': {
+                  borderColor: 'primary.main',
+                },
+              },
+            }}
+          />
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 1, textAlign: 'right' }}
+          >
+            {filteredUsers.length} users found
+          </Typography>
+        </Paper>
+
         <Grid container spacing={3}>
-          {users.map((user) => (
+          {filteredUsers.map((user) => (
             <Grid item xs={12} sm={6} md={4} key={user.id}>
               <Card
                 sx={{
@@ -216,26 +279,47 @@ const UsersList: React.FC = () => {
           ))}
         </Grid>
 
-        <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-          <Pagination
-            count={totalPages}
-            page={page}
-            onChange={(_, value) => setPage(value)}
-            color="primary"
-            size={isMobile ? 'small' : 'large'}
+        {filteredUsers.length === 0 && (
+          <Box
             sx={{
-              '& .MuiPaginationItem-root': {
-                '&.Mui-selected': {
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                  '&:hover': {
-                    backgroundColor: 'primary.dark',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              py: 8,
+            }}
+          >
+            <SearchIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">
+              No users found
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Try adjusting your search query
+            </Typography>
+          </Box>
+        )}
+
+        {filteredUsers.length > 0 && (
+          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={(_, value) => setPage(value)}
+              color="primary"
+              size={isMobile ? 'small' : 'large'}
+              sx={{
+                '& .MuiPaginationItem-root': {
+                  '&.Mui-selected': {
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: 'primary.dark',
+                    },
                   },
                 },
-              },
-            }}
-          />
-        </Box>
+              }}
+            />
+          </Box>
+        )}
       </Container>
 
       <Dialog
