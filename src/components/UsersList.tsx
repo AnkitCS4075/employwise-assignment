@@ -38,9 +38,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 
+const ITEMS_PER_PAGE = 6;
+
 const UsersList: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [displayedUsers, setDisplayedUsers] = useState<User[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [editUser, setEditUser] = useState<User | null>(null);
@@ -51,13 +54,24 @@ const UsersList: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const fetchUsers = useCallback(async () => {
+  const fetchAllUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await getUsers(page);
-      setUsers(response.data);
-      setFilteredUsers(response.data);
-      setTotalPages(response.total_pages);
+      // Fetch first page to get total pages
+      const firstPageResponse = await getUsers(1);
+      const totalPages = firstPageResponse.total_pages;
+      
+      // Fetch all pages in parallel
+      const pagePromises = Array.from({ length: totalPages }, (_, i) => 
+        getUsers(i + 1)
+      );
+      
+      const responses = await Promise.all(pagePromises);
+      const allUsersData = responses.flatMap(response => response.data);
+      
+      setAllUsers(allUsersData);
+      setFilteredUsers(allUsersData);
+      setTotalPages(Math.ceil(allUsersData.length / ITEMS_PER_PAGE));
     } catch (error) {
       console.error('Error fetching users:', error);
       if ((error as any)?.response?.status === 401) {
@@ -67,15 +81,15 @@ const UsersList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, logout, navigate]);
+  }, [logout, navigate]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    fetchAllUsers();
+  }, [fetchAllUsers]);
 
   // Filter users based on search query
   useEffect(() => {
-    const filtered = users.filter(user => {
+    const filtered = allUsers.filter(user => {
       const searchLower = searchQuery.toLowerCase();
       return (
         user.first_name.toLowerCase().includes(searchLower) ||
@@ -84,18 +98,27 @@ const UsersList: React.FC = () => {
       );
     });
     setFilteredUsers(filtered);
-  }, [searchQuery, users]);
+    setTotalPages(Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    setPage(1); // Reset to first page when search changes
+  }, [searchQuery, allUsers]);
+
+  // Update displayed users based on current page
+  useEffect(() => {
+    const startIndex = (page - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    setDisplayedUsers(filteredUsers.slice(startIndex, endIndex));
+  }, [page, filteredUsers]);
 
   const handleEditUser = async (formData: Partial<User>) => {
     if (!editUser) return;
     try {
       await updateUser(editUser.id, formData);
-      const updatedUsers = users.map(user => 
+      const updatedUsers = allUsers.map(user => 
         user.id === editUser.id 
           ? { ...user, ...formData }
           : user
       );
-      setUsers(updatedUsers);
+      setAllUsers(updatedUsers);
       setFilteredUsers(updatedUsers);
       setEditUser(null);
       toast.success('User updated successfully!');
@@ -108,8 +131,8 @@ const UsersList: React.FC = () => {
   const handleDeleteUser = async (userId: number) => {
     try {
       await deleteUser(userId);
-      const updatedUsers = users.filter(user => user.id !== userId);
-      setUsers(updatedUsers);
+      const updatedUsers = allUsers.filter(user => user.id !== userId);
+      setAllUsers(updatedUsers);
       setFilteredUsers(updatedUsers);
       toast.success('User deleted successfully!');
     } catch (error) {
@@ -191,7 +214,7 @@ const UsersList: React.FC = () => {
         </Paper>
 
         <Grid container spacing={3}>
-          {filteredUsers.map((user) => (
+          {displayedUsers.map((user) => (
             <Grid item xs={12} sm={6} md={4} key={user.id}>
               <Card
                 sx={{
